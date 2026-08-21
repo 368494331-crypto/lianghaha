@@ -5,6 +5,14 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = selector => document.querySelector(selector);
 const views = [$("#list-view"), $("#detail-view"), $("#editor-view")];
 let posts = [], currentUser = null, authMode = "login", pendingPhotos = [], selectedFiles = [], sortHot = false;
+const THEME_KEY = "blog-theme";
+function setTheme(theme) {
+  const eyeCare = theme === "eye-care";
+  document.documentElement.dataset.theme = eyeCare ? "eye-care" : "default";
+  $("#theme-button").textContent = eyeCare ? "☀️ 普通模式" : "🌿 护眼模式";
+  $("#theme-button").setAttribute("aria-pressed", String(eyeCare));
+  localStorage.setItem(THEME_KEY, eyeCare ? "eye-care" : "default");
+}
 
 function esc(value) { return String(value ?? "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c])); }
 function date(value) { return new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)); }
@@ -124,6 +132,7 @@ document.addEventListener("click", async event => {
 });
 
 $("#new-post-button").onclick = () => requireLogin(() => openEditor());
+$("#theme-button").onclick = () => setTheme(document.documentElement.dataset.theme === "eye-care" ? "default" : "eye-care");
 $("#cancel-button").onclick = () => renderList(false);
 $("#sort-button").onclick = () => { sortHot = !sortHot; renderList(false); };
 $("#auth-switch").onclick = () => openAuth(authMode === "login" ? "register" : "login");
@@ -157,6 +166,7 @@ $("#auth-form").onsubmit = async event => {
 };
 
 async function init() {
+  setTheme(localStorage.getItem(THEME_KEY) || "default");
   const { data } = await db.auth.getSession(); currentUser = data.session?.user || null; renderAccount();
   db.auth.onAuthStateChange((_event, session) => { currentUser = session?.user || null; renderAccount(); renderList(); });
   $("#year").textContent = new Date().getFullYear(); await renderList();
